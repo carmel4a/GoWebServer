@@ -9,20 +9,25 @@ import (
 )
 
 type Server struct {
-	port uint
+	port    uint
+	fileMap FileMap
 }
 
 func (p *Server) init() {
 	p.port = 3000
 
-	files := make(map[string]string)
-
-	loadFilesRecursively(&files, "./src/")
-
-	loadFile(&files, "./src/favicon.ico", ".png")
+	p.fileMap.init()
+	p.fileMap.loadFilesRecursively("./src/")
+	p.fileMap.load("./src/favicon.ico", ".png")
 
 	http.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(rw, getFile(&files, html.EscapeString(r.URL.Path)))
+		filecontent, ok := p.fileMap.get(html.EscapeString(r.URL.Path))
+		if ok {
+			fmt.Fprintf(rw, filecontent)
+		} else {
+			filecontent, _ := p.fileMap.get("/404")
+			fmt.Fprintf(rw, filecontent)
+		}
 		fmt.Println("Recivied request: ", html.EscapeString(r.URL.Path))
 	})
 
