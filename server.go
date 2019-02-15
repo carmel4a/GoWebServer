@@ -17,10 +17,16 @@ func (p *Server) init() {
 	p.port = 3000
 
 	p.fileMap.init("./src")
-	p.fileMap.loadFilesRecursively("./src/")
-	p.fileMap.load("./src/favicon.ico", ".png")
-
 	p.httpHandler.init(p)
+
+	filesToLoad := []string{
+		"./src/favicon.ico.png",
+	}
+
+	p.fileMap.loadFilesRecursively("./src/")
+	for _, file := range filesToLoad {
+		p.fileMap.loadFromFullPath(file)
+	}
 
 	const portNumber int = 3000
 	fmt.Println("Started server at: ", portNumber)
