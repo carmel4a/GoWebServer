@@ -32,6 +32,11 @@ func (p *FileMap) load(path string, ext string) (string, error) {
 	return content, nil
 }
 
+func (p *FileMap) loadFromFullPath(path string) (string, error) {
+	base, ext := getBaseAndExt(path)
+	return p.load(base, ext)
+}
+
 func (p FileMap) get(path string) (string, error) {
 	val, ok := p.files[path]
 
@@ -60,8 +65,7 @@ func (p *FileMap) loadFilesRecursively(cwd string) error {
 				return err
 			}
 		} else {
-			ext := filepath.Ext(fileName)
-			baseName := fileName[0 : len(fileName)-len(ext)]
+			baseName, ext := getBaseAndExt(fileName)
 
 			_, err := p.load(cwd+baseName, ext)
 			if err != nil {
