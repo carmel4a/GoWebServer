@@ -44,19 +44,34 @@ func (p FileMap) get(path string) (string, error) {
 	}
 }
 
-func (p *FileMap) loadFilesRecursively(cwd string) {
+func (p *FileMap) loadFilesRecursively(cwd string) error {
 	fileList, err := ioutil.ReadDir(cwd)
-	check(err)
+	if err != nil {
+		err = StringError{s: "ERROR: Can't open \"" + cwd + "\" directory!"}
+		return err
+	}
 
 	for _, f := range fileList {
 		fileName := f.Name()
 		if f.IsDir() {
-			p.loadFilesRecursively(cwd + fileName + "/")
+			err := p.loadFilesRecursively(cwd + fileName + "/")
+			if err != nil {
+				fmt.Println(err.Error())
+				return err
+			}
 		} else {
 			ext := filepath.Ext(fileName)
 			baseName := fileName[0 : len(fileName)-len(ext)]
+
+			_, err := p.load(cwd+baseName, ext)
+			if err != nil {
+				fmt.Println(err.Error())
+				return err
+			}
+
+			fmt.Print("INFO: Loaded file: ")
 			fmt.Println(cwd + filepath.Base(fileName))
-			p.load(cwd+baseName, ext) // note - no error handling
 		}
 	}
+	return nil
 }
