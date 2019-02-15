@@ -16,17 +16,32 @@ func (p *FileMap) init(skipPath string) {
 	p.skipPath = skipPath
 }
 
-func (p *FileMap) load(path string, ext string) {
+func (p *FileMap) load(path string, ext string) (string, error) {
 	dat, err := ioutil.ReadFile(path + ext)
-	check(err)
+	content := string(dat)
+
+	if err != nil {
+		fmt.Printf(err.Error())
+		err = StringError{s: "ERROR: Can't load file \"" + path + ext + "\"!"}
+		return "", err
+	}
 
 	// hack for now
-	p.files[path[len(p.skipPath):]] = string(dat)
+	p.files[path[len(p.skipPath):]] = content
+
+	return content, nil
 }
 
-func (p FileMap) get(path string) (string, bool) {
+func (p FileMap) get(path string) (string, error) {
 	val, ok := p.files[path]
-	return val, ok
+
+	if ok {
+		return val, nil
+	} else {
+		err := StringError{s: "WARNING: No file named \"" +
+			path + "\" was loaded."}
+		return "", err
+	}
 }
 
 func (p *FileMap) loadFilesRecursively(cwd string) {
@@ -41,7 +56,7 @@ func (p *FileMap) loadFilesRecursively(cwd string) {
 			ext := filepath.Ext(fileName)
 			baseName := fileName[0 : len(fileName)-len(ext)]
 			fmt.Println(cwd + filepath.Base(fileName))
-			p.load(cwd+baseName, ext)
+			p.load(cwd+baseName, ext) // note - no error handling
 		}
 	}
 }

@@ -24,9 +24,9 @@ func (p HTTPHandler) route(url string,
 func (p HTTPHandler) indexHandle(responseWriter http.ResponseWriter,
 	request *http.Request) {
 	url := html.EscapeString(request.URL.Path)
-	filecontent, ok := p.server.getFileMap().get(url)
+	filecontent, err := p.server.getFileMap().get(url)
 
-	if ok {
+	if err == nil {
 		fmt.Fprintf(responseWriter, filecontent)
 	} else {
 		filecontent, _ := p.server.getFileMap().get("/404")
