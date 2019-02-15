@@ -2,12 +2,8 @@ package main
 
 import (
 	"fmt"
-	"html"
 	"io/ioutil"
-	"log"
-	"net/http"
 	"path/filepath"
-	"strconv"
 )
 
 func check(e error) {
@@ -47,18 +43,6 @@ func getFile(files *map[string]string, path string) string {
 }
 
 func main() {
-	files := make(map[string]string)
-
-	loadFilesRecursively(&files, "./src/")
-
-	loadFile(&files, "./src/favicon.ico", ".png")
-
-	http.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(rw, getFile(&files, html.EscapeString(r.URL.Path)))
-		fmt.Println("Recivied request: ", html.EscapeString(r.URL.Path))
-	})
-
-	const portNumber int = 3000
-	fmt.Println("Started server at: ", portNumber)
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(portNumber), nil))
+	server := Server{}
+	server.init()
 }
