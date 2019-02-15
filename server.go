@@ -16,7 +16,7 @@ type Server struct {
 func (p *Server) init() {
 	p.port = 3000
 
-	p.fileMap.init()
+	p.fileMap.init("./src")
 	p.fileMap.loadFilesRecursively("./src/")
 	p.fileMap.load("./src/favicon.ico", ".png")
 
