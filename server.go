@@ -5,18 +5,23 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/go-chi/chi"
 )
 
 type Server struct {
 	port        uint
 	fileMap     FileMap
 	httpHandler HTTPHandler
+	router      *chi.Mux
 }
 
 func (p *Server) init() {
 	p.port = 3000
 
 	p.fileMap.init("./src")
+	p.router = chi.NewRouter()
+
 	p.httpHandler.init(p)
 
 	filesToLoad := []string{
@@ -30,7 +35,7 @@ func (p *Server) init() {
 
 	const portNumber int = 3000
 	fmt.Println("Started server at: ", portNumber)
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(portNumber), nil))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(portNumber), p.router))
 }
 
 func (p Server) getPort() uint {
