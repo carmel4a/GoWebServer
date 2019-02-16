@@ -1,15 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"html"
-	"html/template"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
+
+type EmptyPage struct{}
 
 type HTTPHandler struct {
 	server *Server
@@ -27,8 +26,8 @@ func (p *HTTPHandler) init(server *Server) {
 }
 
 func (p *HTTPHandler) indexRoute(router chi.Router) {
-	router.Get("/", p.indexHandle)
-	router.Get("/index", p.indexHandle)
+	router.Get("/", p.getIndex)
+	router.Get("/index", p.getIndex)
 }
 
 func (p *HTTPHandler) loginRoute(router chi.Router) {
@@ -36,39 +35,21 @@ func (p *HTTPHandler) loginRoute(router chi.Router) {
 	router.Post("/", p.postLogin)
 }
 
-func (p *HTTPHandler) indexHandle(responseWriter http.ResponseWriter,
+func (p *HTTPHandler) getIndex(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
-	url := html.EscapeString(request.URL.Path)
-	filecontent, err := p.server.getFileMap().get(url)
-
-	if err == nil {
-		fmt.Fprintf(responseWriter, filecontent)
-	} else {
-		filecontent, _ := p.server.getFileMap().get("/404")
-		fmt.Fprintf(responseWriter, filecontent)
-	}
+	createContent(responseWriter, "./src", []string{
+		"/partials/baseof",
+		"/content/index"}, EmptyPage{})
 }
 
 func (p *HTTPHandler) getLogin(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
-	val, _ := p.server.getFileMap().get("/login")
 	responseWriter.WriteHeader(http.StatusOK)
-	fmt.Fprintf(responseWriter, val)
-	// responseWriter.Write([]byte(val))
-
-	/*
-		url := html.EscapeString(request.URL.Path)
-		filecontent, err := p.server.getFileMap().get(url)
-
-		if err == nil {
-			fmt.Fprintf(responseWriter, filecontent)
-		} else {
-			filecontent, _ := p.server.getFileMap().get("/404")
-			fmt.Fprintf(responseWriter, filecontent)
-		}
-	*/
+	createContent(responseWriter, "./src", []string{
+		"/partials/baseof",
+		"/content/login"}, EmptyPage{})
 }
 
 func (p *HTTPHandler) postLogin(responseWriter http.ResponseWriter,
@@ -83,10 +64,9 @@ func (p *HTTPHandler) postLogin(responseWriter http.ResponseWriter,
 	}
 
 	page := Page{Name: request.FormValue("firstname")}
-
-	t, _ := template.ParseFiles("./src/greet.html")
-	responseWriter.WriteHeader(http.StatusOK)
-	t.Execute(responseWriter, page)
+	createContent(responseWriter, "./src", []string{
+		"/partials/baseof",
+		"/content/greet"}, page)
 
 	// fmt.Fprintf(responseWriter, val)
 }
