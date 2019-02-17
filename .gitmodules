@@ -1,0 +1,3 @@
+[submodule "src/e-journal-frontend"]
+	path = src/e-journal-frontend
+	url = git@github.com:CDFN/e-journal-frontend.git

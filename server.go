@@ -19,13 +19,13 @@ type Server struct {
 func (p *Server) init() {
 	p.port = 3000
 
-	p.fileMap.init("./src")
+	p.fileMap.init("./src/e-journal-frontend")
 	p.router = chi.NewRouter()
 
 	p.httpHandler.init(p)
 
 	filesToLoad := []string{
-		"./src/favicon.ico.png",
+		"./src/e-journal-frontend/favicon.ico.png",
 	}
 
 	p.fileMap.loadFilesRecursively("./src/")
