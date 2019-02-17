@@ -64,9 +64,12 @@ func (p *HTTPHandler) getLogin(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
 	responseWriter.WriteHeader(http.StatusOK)
-	createContent(responseWriter, "./src/e-journal-frontend", []string{
-		"/partials/baseof",
-		"/content/login"}, LoginPage{}.get())
+	createPageFromTemplate(responseWriter, PageTemplateSetup{
+		baseDir: "./src/e-journal-frontend",
+		templateFileList: []string{
+			"/partials/baseof",
+			"/content/login"},
+		content: LoginPage{}.get()})
 }
 
 func (p *HTTPHandler) postLogin(responseWriter http.ResponseWriter,
@@ -87,9 +90,13 @@ func (p *HTTPHandler) getRegister(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
 	responseWriter.WriteHeader(http.StatusOK)
-	createContent(responseWriter, "./src/e-journal-frontend", []string{
-		"/partials/baseof",
-		"/content/register"}, RegisterPage{}.get())
+	createPageFromTemplate(responseWriter,
+		PageTemplateSetup{
+			baseDir: "./src/e-journal-frontend",
+			templateFileList: []string{
+				"/partials/baseof",
+				"/content/register"},
+			content: RegisterPage{}.get()})
 }
 
 func (p *HTTPHandler) postRegister(responseWriter http.ResponseWriter,
