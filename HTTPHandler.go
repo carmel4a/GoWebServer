@@ -50,10 +50,14 @@ func (p *HTTPHandler) registerRoute(router chi.Router) {
 
 func (p *HTTPHandler) getIndex(responseWriter http.ResponseWriter,
 	request *http.Request) {
-
-	createContent(responseWriter, "./src/e-journal-frontend", []string{
-		"/partials/baseof",
-		"/content/index"}, EmptyPage{})
+	// if known user
+	/*
+		createContent(responseWriter, "./src/e-journal-frontend", []string{
+			"/partials/baseof",
+			"/content/index"}, EmptyPage{})
+	*/
+	// else
+	http.Redirect(responseWriter, request, "/login/", http.StatusFound)
 }
 
 func (p *HTTPHandler) getLogin(responseWriter http.ResponseWriter,
