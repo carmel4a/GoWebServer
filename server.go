@@ -24,18 +24,8 @@ func (p *Server) init() {
 
 	p.httpHandler.init(p)
 
-	filesToLoad := []string{
-		"./src/e-journal-frontend/favicon.ico.png",
-	}
-
-	p.fileMap.loadFilesRecursively("./src/")
-	for _, file := range filesToLoad {
-		p.fileMap.loadFromFullPath(file)
-	}
-
-	const portNumber int = 3000
-	fmt.Println("Started server at: ", portNumber)
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(portNumber), p.router))
+	p.loadFiles()
+	p.run(3000)
 }
 
 func (p Server) getPort() uint {
@@ -48,4 +38,20 @@ func (p Server) setPort() uint {
 
 func (p *Server) getFileMap() *FileMap {
 	return &p.fileMap
+}
+
+func (p *Server) loadFiles() {
+	filesToLoad := []string{
+		"./src/e-journal-frontend/favicon.ico.png",
+	}
+
+	p.fileMap.loadFilesRecursively("./src/")
+	for _, file := range filesToLoad {
+		p.fileMap.loadFromFullPath(file)
+	}
+}
+
+func (p *Server) run(port int) {
+	fmt.Println("Started server at: ", port)
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), p.router))
 }
