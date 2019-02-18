@@ -31,6 +31,7 @@ func (p *HTTPHandler) init(server *Server) {
 func (p *HTTPHandler) indexRoute(router chi.Router) {
 	router.Get("/", p.getIndex)
 	router.Get("/index", p.getIndex)
+	router.Get("/*", p.getDefault)
 }
 
 func (p *HTTPHandler) loginRoute(router chi.Router) {
@@ -58,6 +59,19 @@ func (p *HTTPHandler) getIndex(responseWriter http.ResponseWriter,
 	*/
 	// else
 	http.Redirect(responseWriter, request, "/login/", http.StatusFound)
+}
+
+// DEBUG/DEV method
+func (p *HTTPHandler) getDefault(responseWriter http.ResponseWriter,
+	request *http.Request) {
+	responseWriter.WriteHeader(http.StatusOK)
+	url := request.RequestURI[1:]
+	createPageFromTemplate(responseWriter, PageTemplateSetup{
+		baseDir: "./src/e-journal-frontend",
+		templateFileList: []string{
+			"/partials/baseof",
+			"/content/" + url},
+		content: getDefaultPage(url).get()})
 }
 
 func (p *HTTPHandler) getLogin(responseWriter http.ResponseWriter,
