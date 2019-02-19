@@ -31,6 +31,8 @@ func (p *HTTPHandler) init(server *Server) {
 func (p *HTTPHandler) indexRoute(router chi.Router) {
 	router.Get("/", p.getIndex)
 	router.Get("/index", p.getIndex)
+	router.Get("/favicon.ico", p.getFavIcon)
+	router.NotFound(p.getNotFund)
 	router.Get("/*", p.getDefault)
 }
 
@@ -61,6 +63,26 @@ func (p *HTTPHandler) getIndex(responseWriter http.ResponseWriter,
 	http.Redirect(responseWriter, request, "/login/", http.StatusFound)
 }
 
+func (p *HTTPHandler) getFavIcon(responseWriter http.ResponseWriter,
+	request *http.Request) {
+
+	responseWriter.WriteHeader(http.StatusOK)
+	responseWriter.Write([]byte(p.server.fileMap.files["/favicon.ico.png"]))
+}
+
+func (p *HTTPHandler) getNotFund(responseWriter http.ResponseWriter,
+	request *http.Request) {
+
+	responseWriter.WriteHeader(http.StatusOK)
+	createPageFromTemplate(responseWriter, PageTemplateSetup{
+		baseDir: "./src/e-journal-frontend",
+		templateFileList: []string{
+			"/partials/baseof",
+			"/content/404"},
+		content: LoginPage{}.get()},
+		p.server.fileMap)
+}
+
 // DEBUG/DEV method
 func (p *HTTPHandler) getDefault(responseWriter http.ResponseWriter,
 	request *http.Request) {
@@ -71,7 +93,8 @@ func (p *HTTPHandler) getDefault(responseWriter http.ResponseWriter,
 		templateFileList: []string{
 			"/partials/baseof",
 			"/content/" + url},
-		content: getDefaultPage(url).get()})
+		content: getDefaultPage(url).get()},
+		p.server.fileMap)
 }
 
 func (p *HTTPHandler) getLogin(responseWriter http.ResponseWriter,
@@ -83,7 +106,8 @@ func (p *HTTPHandler) getLogin(responseWriter http.ResponseWriter,
 		templateFileList: []string{
 			"/partials/baseof",
 			"/content/login"},
-		content: LoginPage{}.get()})
+		content: LoginPage{}.get()},
+		p.server.fileMap)
 }
 
 func (p *HTTPHandler) postLogin(responseWriter http.ResponseWriter,
@@ -110,7 +134,8 @@ func (p *HTTPHandler) getRegister(responseWriter http.ResponseWriter,
 			templateFileList: []string{
 				"/partials/baseof",
 				"/content/register"},
-			content: RegisterPage{}.get()})
+			content: RegisterPage{}.get()},
+		p.server.fileMap)
 }
 
 func (p *HTTPHandler) postRegister(responseWriter http.ResponseWriter,

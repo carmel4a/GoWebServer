@@ -17,7 +17,7 @@ func (p *FileMap) init(skipPath string) {
 }
 
 func (p *FileMap) load(path string, ext string) (string, error) {
-	exclude := []string{".scss"}
+	exclude := []string{".scss", ".git"}
 	for _, val := range exclude {
 		if ext == val {
 			return "", nil
