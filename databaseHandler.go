@@ -49,7 +49,7 @@ func (p *SQLTable) addColumn(c []Column) {
 	}
 }
 
-func (p *SQLTable) create(db *sql.DB) bool {
+func (p *SQLTable) create(db *sql.DB) (string, error) {
 	exec := "CREATE TABLE IF NOT EXISTS "
 	exec += p.name + " ("
 	for _, col := range p.columns {
@@ -59,12 +59,12 @@ func (p *SQLTable) create(db *sql.DB) bool {
 	_, err := db.Exec(exec)
 	if err != nil {
 		fmt.Println(err.Error())
-		return false
+		return exec, err
 	}
-	return true
+	return exec, nil
 }
 
-func (p *DatabaseHandler) createTable() bool {
+func (p *DatabaseHandler) createTable() error {
 	table := SQLTable{name: "userData"}
 	table.addColumn([]Column{
 		Column{name: "id", sqlType: "INT(10)", args: ""},
@@ -73,7 +73,11 @@ func (p *DatabaseHandler) createTable() bool {
 		Column{name: "email", sqlType: "VARCHAR(128)", args: ""},
 		Column{name: "account_type", sqlType: "VARCHAR(20)", args: ""},
 		Column{name: "assigned_class", sqlType: "VARCHAR(20)", args: ""}})
-	return table.create(p.db)
+	_, err := table.create(p.db)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return err
 }
 
 func (p *DatabaseHandler) register(login string, email string, pass string) RegisterErrors {

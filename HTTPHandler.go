@@ -29,6 +29,15 @@ func (p *HTTPHandler) init(server *Server) {
 	router.Route("/resources", p.resourcesRoute)
 }
 
+func (p *HTTPHandler) createNormalPage(responseWriter http.ResponseWriter, page interface{}, templatePathes []string) {
+	responseWriter.WriteHeader(http.StatusOK)
+	createPageFromTemplate(responseWriter, PageTemplateSetup{
+		baseDir:          "./src/e-journal-frontend",
+		templateFileList: templatePathes,
+		content:          page},
+		p.server.fileMap)
+}
+
 func (p *HTTPHandler) indexRoute(router chi.Router) {
 	router.Get("/", p.getIndex)
 	router.Get("/index", p.getIndex)
@@ -74,14 +83,9 @@ func (p *HTTPHandler) getFavIcon(responseWriter http.ResponseWriter,
 func (p *HTTPHandler) getNotFund(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
-	responseWriter.WriteHeader(http.StatusOK)
-	createPageFromTemplate(responseWriter, PageTemplateSetup{
-		baseDir: "./src/e-journal-frontend",
-		templateFileList: []string{
-			"/partials/baseof",
-			"/content/404"},
-		content: LoginPage{}.get()},
-		p.server.fileMap)
+	p.createNormalPage(responseWriter, Page{}.get(), []string{
+		"/partials/baseof",
+		"/content/404"})
 }
 
 // DEBUG/DEV method
@@ -101,14 +105,9 @@ func (p *HTTPHandler) getDefault(responseWriter http.ResponseWriter,
 func (p *HTTPHandler) getLogin(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
-	responseWriter.WriteHeader(http.StatusOK)
-	createPageFromTemplate(responseWriter, PageTemplateSetup{
-		baseDir: "./src/e-journal-frontend",
-		templateFileList: []string{
-			"/partials/baseof",
-			"/content/login"},
-		content: LoginPage{}.get()},
-		p.server.fileMap)
+	p.createNormalPage(responseWriter, LoginPage{}.get(), []string{
+		"/partials/baseof",
+		"/content/login"})
 }
 
 func (p *HTTPHandler) postLogin(responseWriter http.ResponseWriter,
@@ -124,38 +123,22 @@ func (p *HTTPHandler) postLogin(responseWriter http.ResponseWriter,
 		lm = LoginLoginMethod
 	}
 	if p.server.database.login(login, pass, lm) {
-		createPageFromTemplate(responseWriter,
-			PageTemplateSetup{
-				baseDir: "./src/e-journal-frontend",
-				templateFileList: []string{
-					"/partials/baseof",
-					"/content/index"},
-				content: RegisterPage{}.get()},
-			p.server.fileMap)
+		p.createNormalPage(responseWriter, Page{}.get(), []string{
+			"/partials/baseof",
+			"/content/index"})
 	} else {
-		createPageFromTemplate(responseWriter,
-			PageTemplateSetup{
-				baseDir: "./src/e-journal-frontend",
-				templateFileList: []string{
-					"/partials/baseof",
-					"/content/login"},
-				content: LoginPage{}.get()},
-			p.server.fileMap)
+		p.createNormalPage(responseWriter, LoginPage{}.get(), []string{
+			"/partials/baseof",
+			"/content/login"})
 	}
 }
 
 func (p *HTTPHandler) getRegister(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
-	responseWriter.WriteHeader(http.StatusOK)
-	createPageFromTemplate(responseWriter,
-		PageTemplateSetup{
-			baseDir: "./src/e-journal-frontend",
-			templateFileList: []string{
-				"/partials/baseof",
-				"/content/register"},
-			content: RegisterPage{}.get()},
-		p.server.fileMap)
+	p.createNormalPage(responseWriter, RegisterPage{}.get(), []string{
+		"/partials/baseof",
+		"/content/register"})
 }
 
 func (p *HTTPHandler) postRegister(responseWriter http.ResponseWriter,
@@ -173,13 +156,6 @@ func (p *HTTPHandler) postRegister(responseWriter http.ResponseWriter,
 	} else {
 		http.Redirect(responseWriter, request, "/register/", http.StatusFound)
 	}
-	/*
-		page := Page{Name: request.FormValue("firstname")}
-		createContent(responseWriter, "./src", []string{
-			"/partials/baseof",
-			"/content/greet"}, page)
-	*/
-	// fmt.Fprintf(responseWriter, val)
 }
 
 func (p *HTTPHandler) getCSS(responseWriter http.ResponseWriter,

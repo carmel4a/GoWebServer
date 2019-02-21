@@ -5,3 +5,10 @@ GoWebServer.exe
 # IDE files
 .vscode
 .idea
+
+# SQLite database
+*.db
+
+# Common binary files
+*.zip
+*.pdf
