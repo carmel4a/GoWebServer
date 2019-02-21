@@ -7,6 +7,8 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Server struct {
@@ -14,10 +16,13 @@ type Server struct {
 	fileMap     FileMap
 	httpHandler HTTPHandler
 	router      *chi.Mux
+	database    DatabaseHandler
 }
 
 func (p *Server) init() {
 	p.port = 3000
+
+	p.database.init()
 
 	p.fileMap.init("./src/e-journal-frontend")
 	p.router = chi.NewRouter()
@@ -45,7 +50,7 @@ func (p *Server) loadFiles() {
 		"./src/e-journal-frontend/favicon.ico.png",
 	}
 
-	p.fileMap.loadFilesRecursively("./src/")
+	p.fileMap.loadFilesRecursively("./src/e-journal-frontend/")
 	for _, file := range filesToLoad {
 		p.fileMap.loadFromFullPath(file)
 	}

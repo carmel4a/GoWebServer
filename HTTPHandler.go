@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -114,14 +115,33 @@ func (p *HTTPHandler) postLogin(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
 	request.ParseForm()
-
-	/*
-		page := Page{Name: request.FormValue("firstname")}
-		createContent(responseWriter, "./src", []string{
-			"/partials/baseof",
-			"/content/greet"}, page)
-	*/
-	// fmt.Fprintf(responseWriter, val)
+	login := request.FormValue("login")
+	pass := request.FormValue("password")
+	var lm LoginMethod
+	if strings.Contains("@", login) {
+		lm = EmailLoginMethod
+	} else {
+		lm = LoginLoginMethod
+	}
+	if p.server.database.login(login, pass, lm) {
+		createPageFromTemplate(responseWriter,
+			PageTemplateSetup{
+				baseDir: "./src/e-journal-frontend",
+				templateFileList: []string{
+					"/partials/baseof",
+					"/content/index"},
+				content: RegisterPage{}.get()},
+			p.server.fileMap)
+	} else {
+		createPageFromTemplate(responseWriter,
+			PageTemplateSetup{
+				baseDir: "./src/e-journal-frontend",
+				templateFileList: []string{
+					"/partials/baseof",
+					"/content/login"},
+				content: LoginPage{}.get()},
+			p.server.fileMap)
+	}
 }
 
 func (p *HTTPHandler) getRegister(responseWriter http.ResponseWriter,
@@ -143,6 +163,16 @@ func (p *HTTPHandler) postRegister(responseWriter http.ResponseWriter,
 
 	request.ParseForm()
 
+	login := request.FormValue("login")
+	pass := request.FormValue("password")
+	email := request.FormValue("email")
+
+	result := p.server.database.register(login, email, pass)
+	if result == RegisterOK {
+		http.Redirect(responseWriter, request, "/login/", http.StatusFound)
+	} else {
+		http.Redirect(responseWriter, request, "/register/", http.StatusFound)
+	}
 	/*
 		page := Page{Name: request.FormValue("firstname")}
 		createContent(responseWriter, "./src", []string{
