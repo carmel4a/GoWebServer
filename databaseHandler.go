@@ -14,9 +14,9 @@ type DatabaseHandler struct {
 type RegisterErrors int
 
 const (
-	RegisterOK  RegisterErrors = 0
-	LoginExists RegisterErrors = 1
-	EmailExists RegisterErrors = 2
+	RegisterOK          RegisterErrors = 0
+	RegisterLoginExists RegisterErrors = 1
+	RegisterEmailExists RegisterErrors = 2
 )
 
 func (p *DatabaseHandler) init() {
@@ -25,20 +25,38 @@ func (p *DatabaseHandler) init() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	p.createTable() // should be separate program
+	p.createTable()
 }
 
-func (p *DatabaseHandler) createTable() bool {
-	createTable :=
-		"CREATE TABLE IF NOT EXISTS userData(" +
-			"id INT(10)," +
-			"login VARCHAR(20)," +
-			"password VARCHAR(128)," +
-			"email VARCHAR(128)," +
-			"account_type VARCHAR(20)," +
-			"assigned_class VARCHAR(20));"
+type Column struct {
+	name    string
+	sqlType string
+	args    string
+}
 
-	_, err := p.db.Exec(createTable)
+func (p Column) get() string {
+	return p.name + " " + p.sqlType + " " + p.args
+}
+
+type SQLTable struct {
+	name    string
+	columns []Column
+}
+
+func (p *SQLTable) addColumn(c []Column) {
+	for _, col := range c {
+		p.columns = append(p.columns, col)
+	}
+}
+
+func (p *SQLTable) create(db *sql.DB) bool {
+	exec := "CREATE TABLE IF NOT EXISTS "
+	exec += p.name + " ("
+	for _, col := range p.columns {
+		exec += col.get() + ", "
+	}
+	exec = exec[0:len(exec)-2] + ");"
+	_, err := db.Exec(exec)
 	if err != nil {
 		fmt.Println(err.Error())
 		return false
@@ -46,12 +64,24 @@ func (p *DatabaseHandler) createTable() bool {
 	return true
 }
 
+func (p *DatabaseHandler) createTable() bool {
+	table := SQLTable{name: "userData"}
+	table.addColumn([]Column{
+		Column{name: "id", sqlType: "INT(10)", args: ""},
+		Column{name: "login", sqlType: "VARCHAR(20)", args: ""},
+		Column{name: "password", sqlType: "VARCHAR(128)", args: ""},
+		Column{name: "email", sqlType: "VARCHAR(128)", args: ""},
+		Column{name: "account_type", sqlType: "VARCHAR(20)", args: ""},
+		Column{name: "assigned_class", sqlType: "VARCHAR(20)", args: ""}})
+	return table.create(p.db)
+}
+
 func (p *DatabaseHandler) register(login string, email string, pass string) RegisterErrors {
 	if p.userExist(login, LoginLoginMethod) {
-		return LoginExists
+		return RegisterLoginExists
 	}
 	if p.userExist(email, EmailLoginMethod) {
-		return EmailExists
+		return RegisterEmailExists
 	}
 	p.createRecord("0", login, pass, email, "undefined", "undefined")
 	return RegisterOK
@@ -94,7 +124,6 @@ func (p *DatabaseHandler) userExist(username string, method LoginMethod) bool {
 }
 
 func (p *DatabaseHandler) login(username string, pass string, method LoginMethod) bool {
-
 	var login string
 	if method == LoginLoginMethod {
 		login = "SELECT login, password " +
