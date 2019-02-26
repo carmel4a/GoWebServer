@@ -43,6 +43,15 @@ type SQLTable struct {
 	columns []Column
 }
 
+type PersonRecord struct {
+	hash  string
+	login string
+	pass  string
+	email string
+	group string
+	class string
+}
+
 func (p *SQLTable) addColumn(c []Column) {
 	for _, col := range c {
 		p.columns = append(p.columns, col)
@@ -87,17 +96,22 @@ func (p *DatabaseHandler) register(login string, email string, pass string) Regi
 	if p.userExist(email, EmailLoginMethod) {
 		return RegisterEmailExists
 	}
-	p.createRecord("0", login, pass, email, "undefined", "undefined")
+	p.createRecord(PersonRecord{
+		hash:  "0",
+		login: login,
+		pass:  pass,
+		email: email,
+		group: "undefined",
+		class: "undefined"})
 	return RegisterOK
 }
 
-func (p *DatabaseHandler) createRecord(hash string, login string, pass string, email string, group string, class string) {
-
+func (p *DatabaseHandler) createRecord(r PersonRecord) {
 	register := "INSERT INTO userData " +
 		"(id, login, password, email, account_type, assigned_class)" +
 		"VALUES (?, ?, ?, ?, ?, ?);"
 
-	_, err := p.db.Exec(register, hash, login, pass, email, group, class)
+	_, err := p.db.Exec(register, r.hash, r.login, r.pass, r.email, r.group, r.class)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
