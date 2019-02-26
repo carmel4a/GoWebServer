@@ -32,7 +32,7 @@ func (p *HTTPHandler) init(server *Server) {
 func (p *HTTPHandler) createNormalPage(responseWriter http.ResponseWriter, page interface{}, templatePathes []string) {
 	responseWriter.WriteHeader(http.StatusOK)
 	createPageFromTemplate(responseWriter, PageTemplateSetup{
-		baseDir:          "./src/e-journal-frontend",
+		baseDir:          p.server.getWebsiteDir(),
 		templateFileList: templatePathes,
 		content:          page},
 		p.server.fileMap)
@@ -77,15 +77,15 @@ func (p *HTTPHandler) getFavIcon(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
 	responseWriter.WriteHeader(http.StatusOK)
-	responseWriter.Write([]byte(p.server.fileMap.files["/favicon.ico.png"]))
+	responseWriter.Write([]byte(p.server.fileMap.files["favicon.ico.png"]))
 }
 
 func (p *HTTPHandler) getNotFund(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
 	p.createNormalPage(responseWriter, Page{}.get(), []string{
-		"/partials/baseof",
-		"/content/404"})
+		"partials/baseof",
+		"content/404"})
 }
 
 // DEBUG/DEV method
@@ -94,10 +94,10 @@ func (p *HTTPHandler) getDefault(responseWriter http.ResponseWriter,
 	responseWriter.WriteHeader(http.StatusOK)
 	url := request.RequestURI[1:]
 	createPageFromTemplate(responseWriter, PageTemplateSetup{
-		baseDir: "./src/e-journal-frontend",
+		baseDir: p.server.getWebsiteDir(),
 		templateFileList: []string{
-			"/partials/baseof",
-			"/content/" + url},
+			"partials/baseof",
+			"content/" + url},
 		content: getDefaultPage(url).get()},
 		p.server.fileMap)
 }
@@ -106,8 +106,8 @@ func (p *HTTPHandler) getLogin(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
 	p.createNormalPage(responseWriter, LoginPage{}.get(), []string{
-		"/partials/baseof",
-		"/content/login"})
+		"partials/baseof",
+		"content/login"})
 }
 
 func (p *HTTPHandler) postLogin(responseWriter http.ResponseWriter,
@@ -124,12 +124,12 @@ func (p *HTTPHandler) postLogin(responseWriter http.ResponseWriter,
 	}
 	if p.server.database.login(login, pass, lm) {
 		p.createNormalPage(responseWriter, Page{}.get(), []string{
-			"/partials/baseof",
-			"/content/index"})
+			"partials/baseof",
+			"content/index"})
 	} else {
 		p.createNormalPage(responseWriter, LoginPage{}.get(), []string{
-			"/partials/baseof",
-			"/content/login"})
+			"partials/baseof",
+			"content/login"})
 	}
 }
 
@@ -137,8 +137,8 @@ func (p *HTTPHandler) getRegister(responseWriter http.ResponseWriter,
 	request *http.Request) {
 
 	p.createNormalPage(responseWriter, RegisterPage{}.get(), []string{
-		"/partials/baseof",
-		"/content/register"})
+		"partials/baseof",
+		"content/register"})
 }
 
 func (p *HTTPHandler) postRegister(responseWriter http.ResponseWriter,
@@ -163,7 +163,7 @@ func (p *HTTPHandler) getCSS(responseWriter http.ResponseWriter,
 
 	base, _ := getBaseAndExt(request.URL.EscapedPath())
 
-	val, err := p.server.fileMap.get(base)
+	val, err := p.server.fileMap.get(base[1:])
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -177,7 +177,7 @@ func (p *HTTPHandler) getJS(responseWriter http.ResponseWriter,
 
 	base, _ := getBaseAndExt(request.URL.EscapedPath())
 
-	val, err := p.server.fileMap.get(base)
+	val, err := p.server.fileMap.get(base[1:])
 	if err != nil {
 		fmt.Println(err.Error())
 	}

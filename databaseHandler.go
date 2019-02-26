@@ -19,8 +19,8 @@ const (
 	RegisterEmailExists RegisterErrors = 2
 )
 
-func (p *DatabaseHandler) init() {
-	db, err := sql.Open("sqlite3", "./src/database.db")
+func (p *DatabaseHandler) init(s *Server) {
+	db, err := sql.Open("sqlite3", s.srcDir+"/database.db")
 	p.db = db
 	if err != nil {
 		fmt.Println(err.Error())

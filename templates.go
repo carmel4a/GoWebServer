@@ -19,7 +19,7 @@ func getPartials(fm FileMap) []string {
 		if len(key) < 10 {
 			continue
 		}
-		if key[:9] == "/partials" {
+		if key[:8] == "partials" {
 			result = append(result, fm.skipPath+key+".html")
 		}
 	}

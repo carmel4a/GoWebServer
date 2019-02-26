@@ -17,43 +17,30 @@ type Server struct {
 	httpHandler HTTPHandler
 	router      *chi.Mux
 	database    DatabaseHandler
+	srcDir      string
+	websiteDir  string
 }
 
 func (p *Server) init() {
 	p.port = 3000
+	p.srcDir = "src"
+	p.websiteDir = "e-journal-frontend"
 
-	p.database.init()
-
-	p.fileMap.init("./src/e-journal-frontend")
+	p.database.init(p)
+	p.fileMap.init(p.getWebsiteDir())
 	p.router = chi.NewRouter()
-
 	p.httpHandler.init(p)
 
 	p.loadFiles()
 	p.run(3000)
 }
 
-func (p Server) getPort() uint {
-	return p.port
-}
-
-func (p Server) setPort() uint {
-	return p.port
-}
-
-func (p *Server) getFileMap() *FileMap {
-	return &p.fileMap
+func (p Server) getWebsiteDir() string {
+	return p.srcDir + "/" + p.websiteDir + "/"
 }
 
 func (p *Server) loadFiles() {
-	filesToLoad := []string{
-		"./src/e-journal-frontend/favicon.ico.png",
-	}
-
-	p.fileMap.loadFilesRecursively("./src/e-journal-frontend/")
-	for _, file := range filesToLoad {
-		p.fileMap.loadFromFullPath(file)
-	}
+	p.fileMap.loadFilesRecursively(p.getWebsiteDir())
 }
 
 func (p *Server) run(port int) {
