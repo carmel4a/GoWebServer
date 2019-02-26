@@ -7,44 +7,53 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// DatabaseHandler is entry point to databases.
+// Stores pointers to databases.
 type DatabaseHandler struct {
 	db *sql.DB
 }
 
-type RegisterErrors int
+// QueryResults is alias for return type of database functions.
+type QueryResults int
 
 const (
-	RegisterOK            RegisterErrors = 0
-	RegisterLoginExists   RegisterErrors = 1
-	RegisterEmailExists   RegisterErrors = 2
-	RegisterPasswordError RegisterErrors = 3
+	// RegisterOK - Register was successfull.
+	RegisterOK QueryResults = 0
+	// RegisterLoginExists - Login already exists.
+	RegisterLoginExists QueryResults = 1
+	// RegisterEmailExists - E-mail already exists.
+	RegisterEmailExists QueryResults = 2
+	// RegisterPasswordError - bcrypt returned an error.
+	RegisterPasswordError QueryResults = 3
+
+	// LoginOK - Login was successfull.
+	LoginOK QueryResults = 0
+	// LoginWrongLogin - Login is unknown or unregistered.
+	LoginWrongLogin QueryResults = 1
+	// LoginWrongPassword - Login is registered, but passworld doesn't match.
+	LoginWrongPassword QueryResults = 2
 )
 
-func (p *DatabaseHandler) init(s *Server) {
+// init is DatabaseHandler constructor.
+/*
+ - opens `SQL` database(s).
+ - initializes database's tables if they aren't present
+
+**Note:** database must be closed on program exit. */
+func (p *DatabaseHandler) init(s *Server) error {
 	db, err := sql.Open("sqlite3", s.srcDir+"/database.db")
-	p.db = db
 	if err != nil {
 		fmt.Println(err.Error())
+		return StringError{"ERROR: Some of databases weren't opened!"}
 	}
+	p.db = db
+
 	p.createTable()
+	return nil
 }
 
-type Column struct {
-	name    string
-	sqlType string
-	args    string
-}
-
-func (p Column) get() string {
-	return p.name + " " + p.sqlType + " " + p.args
-}
-
-type SQLTable struct {
-	name    string
-	columns []Column
-}
-
-type PersonRecord struct {
+// UserRecord is single user in `userData` database.
+type UserRecord struct {
 	hash  string
 	login string
 	pass  string
@@ -53,36 +62,16 @@ type PersonRecord struct {
 	class string
 }
 
-func (p *SQLTable) addColumn(c []Column) {
-	for _, col := range c {
-		p.columns = append(p.columns, col)
-	}
-}
-
-func (p *SQLTable) create(db *sql.DB) (string, error) {
-	exec := "CREATE TABLE IF NOT EXISTS "
-	exec += p.name + " ("
-	for _, col := range p.columns {
-		exec += col.get() + ", "
-	}
-	exec = exec[0:len(exec)-2] + ");"
-	_, err := db.Exec(exec)
-	if err != nil {
-		fmt.Println(err.Error())
-		return exec, err
-	}
-	return exec, nil
-}
-
 func (p *DatabaseHandler) createTable() error {
-	table := SQLTable{name: "userData"}
-	table.addColumn([]Column{
-		Column{name: "id", sqlType: "INT(10)", args: ""},
-		Column{name: "login", sqlType: "VARCHAR(20)", args: ""},
-		Column{name: "password", sqlType: "VARCHAR(128)", args: ""},
-		Column{name: "email", sqlType: "VARCHAR(128)", args: ""},
-		Column{name: "account_type", sqlType: "VARCHAR(20)", args: ""},
-		Column{name: "assigned_class", sqlType: "VARCHAR(20)", args: ""}})
+	var table SQLiteTable
+	table.setName("userData")
+	table.addColumn([]SQLColumn{
+		SQLiteColumn{name: "id", sqlType: "INT(10)", args: ""},
+		SQLiteColumn{name: "login", sqlType: "VARCHAR(20)", args: ""},
+		SQLiteColumn{name: "password", sqlType: "VARCHAR(128)", args: ""},
+		SQLiteColumn{name: "email", sqlType: "VARCHAR(128)", args: ""},
+		SQLiteColumn{name: "account_type", sqlType: "VARCHAR(20)", args: ""},
+		SQLiteColumn{name: "assigned_class", sqlType: "VARCHAR(20)", args: ""}})
 	_, err := table.create(p.db)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -90,7 +79,7 @@ func (p *DatabaseHandler) createTable() error {
 	return err
 }
 
-func (p *DatabaseHandler) register(login string, email string, pass string) RegisterErrors {
+func (p *DatabaseHandler) register(login string, email string, pass string) QueryResults {
 	if p.userExist(login, LoginLoginMethod) {
 		return RegisterLoginExists
 	}
@@ -103,7 +92,7 @@ func (p *DatabaseHandler) register(login string, email string, pass string) Regi
 		return RegisterPasswordError
 	}
 
-	p.createRecord(PersonRecord{
+	p.createRecord(UserRecord{
 		hash:  "0",
 		login: login,
 		pass:  passHash,
@@ -113,7 +102,7 @@ func (p *DatabaseHandler) register(login string, email string, pass string) Regi
 	return RegisterOK
 }
 
-func (p *DatabaseHandler) createRecord(r PersonRecord) {
+func (p *DatabaseHandler) createRecord(r UserRecord) {
 	register := "INSERT INTO userData " +
 		"(id, login, password, email, account_type, assigned_class)" +
 		"VALUES (?, ?, ?, ?, ?, ?);"
