@@ -14,9 +14,10 @@ type DatabaseHandler struct {
 type RegisterErrors int
 
 const (
-	RegisterOK          RegisterErrors = 0
-	RegisterLoginExists RegisterErrors = 1
-	RegisterEmailExists RegisterErrors = 2
+	RegisterOK            RegisterErrors = 0
+	RegisterLoginExists   RegisterErrors = 1
+	RegisterEmailExists   RegisterErrors = 2
+	RegisterPasswordError RegisterErrors = 3
 )
 
 func (p *DatabaseHandler) init(s *Server) {
@@ -96,10 +97,16 @@ func (p *DatabaseHandler) register(login string, email string, pass string) Regi
 	if p.userExist(email, EmailLoginMethod) {
 		return RegisterEmailExists
 	}
+	passHash, err := HashPassword(pass)
+	if err != nil {
+		println(err.Error())
+		return RegisterPasswordError
+	}
+
 	p.createRecord(PersonRecord{
 		hash:  "0",
 		login: login,
-		pass:  pass,
+		pass:  passHash,
 		email: email,
 		group: "undefined",
 		class: "undefined"})
@@ -146,20 +153,27 @@ func (p *DatabaseHandler) login(username string, pass string, method LoginMethod
 	if method == LoginLoginMethod {
 		login = "SELECT login, password " +
 			"FROM userData " +
-			"WHERE login = ? AND password = ?"
+			"WHERE login = ?"
 	} else if method == EmailLoginMethod {
 		login = "SELECT email, password " +
 			"FROM userData " +
-			"WHERE email = ? AND password = ?"
+			"WHERE email = ?"
 	}
 
-	result, err := p.db.Query(login, username, pass)
+	result, err := p.db.Query(login, username)
 	if err != nil {
 		fmt.Println(err.Error())
 		return false
 	}
 	for result.Next() {
-		return true
+		var login string
+		var passHash string
+		result.Scan(&login, &passHash)
+		if CheckPasswordHash(pass, passHash) {
+			return true
+		} else {
+			return false
+		}
 	}
 	defer result.Close()
 	return false

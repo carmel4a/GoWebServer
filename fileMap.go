@@ -17,10 +17,11 @@ func (p *FileMap) init(skipPath string) {
 }
 
 func (p *FileMap) load(path string, ext string) (string, error) {
-	exclude := []string{".scss", ".git"}
+	exclude := []string{".scss", ".git"} //, ".html"}
 	for _, val := range exclude {
 		if ext == val {
-			return "", nil
+			err := StringError{s: "INFO: Skipped loading: \"" + path + ext + "\"."}
+			return "", err
 		}
 	}
 	dat, err := ioutil.ReadFile(path + ext)
@@ -68,7 +69,7 @@ func (p *FileMap) loadFilesRecursively(cwd string) error {
 			err := p.loadFilesRecursively(cwd + fileName + "/")
 			if err != nil {
 				fmt.Println(err.Error())
-				return err
+				continue
 			}
 		} else {
 			baseName, ext := getBaseAndExt(fileName)
@@ -76,7 +77,7 @@ func (p *FileMap) loadFilesRecursively(cwd string) error {
 			_, err := p.load(cwd+baseName, ext)
 			if err != nil {
 				fmt.Println(err.Error())
-				return err
+				continue
 			}
 
 			fmt.Print("INFO: Loaded file: ")
