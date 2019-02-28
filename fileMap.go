@@ -31,30 +31,36 @@ func (p *FileMap) init(skipPath string, excludedExt []string) {
 func (p *FileMap) load(path string, ext string) (string, error) {
 	for _, val := range p.excludedExt {
 		if ext == val {
-			err := StringError{s: "INFO: Skipped loading: \"" + path + ext + "\"."}
+			err := StringError{"INFO: Skipped loading: \"" + path + ext + "\"."}
 			return "", err
 		}
 	}
 	dat, err := ioutil.ReadFile(path + ext)
-	content := string(dat)
 
 	if err != nil {
 		fmt.Printf(err.Error())
-		err = StringError{s: "ERROR: Can't load file \"" + path + ext + "\"!"}
+		err = StringError{"ERROR: Can't load file \"" + path + ext + "\"!"}
 		return "", err
 	}
 
-	// hack for now
+	content := string(dat)
+
+	// XXX clear that
 	p.files[path[len(p.skipPath):]] = content
 
 	return content, nil
 }
 
+// loadFromFullPath loads file from full path (relative to executable).
+// For details see `load`.
 func (p *FileMap) loadFromFullPath(path string) (string, error) {
 	base, ext := getBaseAndExt(path)
 	return p.load(base, ext)
 }
 
+// get returns content of file with given path. Note that `skipPath` shouldn't
+// be passed. Returns content of file. Error is returned if no file were loaded
+// (or were skipped).
 func (p FileMap) get(path string) (string, error) {
 	val, ok := p.files[path]
 
@@ -67,8 +73,12 @@ func (p FileMap) get(path string) (string, error) {
 	}
 }
 
+// loadFilesRecursively loads every file from `cwd`, and subdirectories.
+// Returns error if `cwd` cant' be opened. Sub-errors about files and
+// subdirectories are ignored.
 func (p *FileMap) loadFilesRecursively(cwd string) error {
 	fileList, err := ioutil.ReadDir(cwd)
+
 	if err != nil {
 		err = StringError{s: "ERROR: Can't open \"" + cwd + "\" directory!"}
 		return err
@@ -76,6 +86,7 @@ func (p *FileMap) loadFilesRecursively(cwd string) error {
 
 	for _, f := range fileList {
 		fileName := f.Name()
+
 		if f.IsDir() {
 			err := p.loadFilesRecursively(cwd + fileName + "/")
 			if err != nil {
@@ -91,8 +102,7 @@ func (p *FileMap) loadFilesRecursively(cwd string) error {
 				continue
 			}
 
-			fmt.Print("INFO: Loaded file: ")
-			fmt.Println(cwd + filepath.Base(fileName))
+			fmt.Println("INFO: Loaded file: " + cwd + filepath.Base(fileName))
 		}
 	}
 	return nil
