@@ -6,19 +6,30 @@ import (
 	"path/filepath"
 )
 
+// FileMap is structure that hold (relative) names of files with their content.
 type FileMap struct {
-	files    map[string]string
-	skipPath string // Used to omit part of loaded file path
+	// files is a map where keys are relative pathes (wit skipped `skipPath`
+	// part). Values are raw file content.
+	files map[string]string
+	// skipPath is used to omit part of loaded file path
+	skipPath string
+	// excludedExt stores extentions witch mustn't be loaded. Changing this in
+	// runtime has no effect on already loaded files.
+	excludedExt []string
 }
 
-func (p *FileMap) init(skipPath string) {
+// init creates FileMap. Allocates map.
+func (p *FileMap) init(skipPath string, excludedExt []string) {
 	p.files = make(map[string]string)
 	p.skipPath = skipPath
+	p.excludedExt = excludedExt
 }
 
+// load loads file from given `path` and `extention`.
+// Returns content of file as string. Error is returned if load weren't
+// successfull OR given extention should be skipped.
 func (p *FileMap) load(path string, ext string) (string, error) {
-	exclude := []string{".scss", ".git"} //, ".html"}
-	for _, val := range exclude {
+	for _, val := range p.excludedExt {
 		if ext == val {
 			err := StringError{s: "INFO: Skipped loading: \"" + path + ext + "\"."}
 			return "", err

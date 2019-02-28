@@ -27,7 +27,7 @@ func (p *Server) init() {
 	p.websiteDir = "e-journal-frontend"
 
 	p.database.init(p)
-	p.fileMap.init(p.getWebsiteDir())
+	p.fileMap.init(p.getWebsiteDir(), []string{".scss", ".git"})
 	p.router = chi.NewRouter()
 	p.httpHandler.init(p)
 
