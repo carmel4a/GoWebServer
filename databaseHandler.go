@@ -62,11 +62,12 @@ type UserRecord struct {
 	class string
 }
 
+// Creates userData table
 func (p *DatabaseHandler) createTable() error {
 	var table SQLiteTable
 	table.setName("userData")
 	table.addColumn([]SQLColumn{
-		SQLiteColumn{name: "id", sqlType: "INT(10)", args: ""},
+		SQLiteColumn{name: "id", sqlType: "INTEGER", args: "PRIMARY KEY"},
 		SQLiteColumn{name: "login", sqlType: "VARCHAR(20)", args: ""},
 		SQLiteColumn{name: "password", sqlType: "VARCHAR(128)", args: ""},
 		SQLiteColumn{name: "email", sqlType: "VARCHAR(128)", args: ""},
@@ -104,10 +105,10 @@ func (p *DatabaseHandler) register(login string, email string, pass string) Quer
 
 func (p *DatabaseHandler) createRecord(r UserRecord) {
 	register := "INSERT INTO userData " +
-		"(id, login, password, email, account_type, assigned_class)" +
-		"VALUES (?, ?, ?, ?, ?, ?);"
+		"(login, password, email, account_type, assigned_class)" +
+		"VALUES (?, ?, ?, ?, ?);"
 
-	_, err := p.db.Exec(register, r.hash, r.login, r.pass, r.email, r.group, r.class)
+	_, err := p.db.Exec(register, r.login, r.pass, r.email, r.group, r.class)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
