@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,7 +13,10 @@ import (
 
 type EmptyPage struct{}
 
+// HTTPHandler is HTTP entry point.
+// Gets, posts etc.
 type HTTPHandler struct {
+	// server - server reference.
 	server *Server
 }
 
@@ -22,10 +26,11 @@ func (p *HTTPHandler) init(server *Server) {
 
 	router.Use(middleware.Timeout(60 * time.Second))
 	router.Use(middleware.Logger)
+	router.Use(isLogged)
 
-	router.Route("/", p.indexRoute)
-	router.Route("/login", p.loginRoute)
-	router.Route("/register", p.registerRoute)
+	router.With(shouldBeLogged).Route("/", p.indexRoute)
+	router.With(redirectToIndexIfLogged).Route("/login", p.loginRoute)
+	router.With(redirectToIndexIfLogged).Route("/register", p.registerRoute)
 	router.Route("/resources", p.resourcesRoute)
 }
 
@@ -63,14 +68,8 @@ func (p *HTTPHandler) registerRoute(router chi.Router) {
 
 func (p *HTTPHandler) getIndex(responseWriter http.ResponseWriter,
 	request *http.Request) {
-	// if known user
-	/*
-		createContent(responseWriter, "./src/e-journal-frontend", []string{
-			"/partials/baseof",
-			"/content/index"}, EmptyPage{})
-	*/
-	// else
-	http.Redirect(responseWriter, request, "/login/", http.StatusFound)
+
+	responseWriter.Write([]byte("Siema!"))
 }
 
 func (p *HTTPHandler) getFavIcon(responseWriter http.ResponseWriter,
@@ -152,9 +151,9 @@ func (p *HTTPHandler) postRegister(responseWriter http.ResponseWriter,
 
 	result := p.server.database.register(login, email, pass)
 	if result == RegisterOK {
-		http.Redirect(responseWriter, request, "/login/", http.StatusFound)
+		redirectTo(responseWriter, request, "/login/", http.StatusFound)
 	} else {
-		http.Redirect(responseWriter, request, "/register/", http.StatusFound)
+		redirectTo(responseWriter, request, "/register/", http.StatusFound)
 	}
 }
 
@@ -184,4 +183,38 @@ func (p *HTTPHandler) getJS(responseWriter http.ResponseWriter,
 	responseWriter.Header().Add("Content-Type", "text/javascript")
 	responseWriter.WriteHeader(http.StatusOK)
 	responseWriter.Write([]byte(val))
+}
+
+func isLogged(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), "isLogged", true)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func shouldBeLogged(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if ctx.Value("isLogged").(bool) {
+			next.ServeHTTP(w, r.WithContext(ctx))
+		} else {
+			redirectTo(w, r, "/login/", http.StatusFound)
+		}
+	})
+}
+
+func redirectToIndexIfLogged(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if ctx.Value("isLogged").(bool) {
+			redirectTo(w, r, "/index", http.StatusFound)
+		} else {
+			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+	})
+}
+
+func redirectTo(responseWriter http.ResponseWriter,
+	request *http.Request, where string, HTTPStatusCode int) {
+	http.Redirect(responseWriter, request, where, HTTPStatusCode)
 }
